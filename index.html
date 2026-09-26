@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شِعري — قصيدة باسمك</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0; min-height:100vh; font-family:Tahoma,Arial,sans-serif;
+ background:linear-gradient(135deg,#100c24,#24134b 50%,#0b2134);
+ color:#fff; display:flex; justify-content:center; padding:28px 14px;
+}
+.app{width:min(760px,100%)}
+.header{text-align:center;margin:10px 0 24px}
+.logo{font-size:42px;font-weight:900;color:#ffd86b;text-shadow:0 0 22px #d7a83d55}
+.subtitle{color:#d8d3e7;font-size:16px;margin-top:8px}
+.card{
+ background:#ffffff10;border:1px solid #ffffff1f;border-radius:24px;
+ padding:22px;box-shadow:0 18px 60px #0007;backdrop-filter:blur(12px)
+}
+label{display:block;margin:4px 0 8px;font-weight:700}
+input,select{
+ width:100%;padding:15px;border-radius:14px;border:1px solid #ffffff25;
+ background:#0c0918;color:#fff;font-size:16px;outline:none;margin-bottom:16px
+}
+input:focus,select:focus{border-color:#ffd86b}
+button{
+ width:100%;padding:15px;border:0;border-radius:14px;font-size:17px;
+ font-weight:800;cursor:pointer;background:linear-gradient(90deg,#ffd86b,#ffad4a);
+ color:#241300;transition:.2s
+}
+button:hover{transform:translateY(-2px)}
+.secondary{margin-top:10px;background:#ffffff12;color:#fff;border:1px solid #ffffff22}
+.result{
+ display:none;margin-top:20px;padding:24px;border-radius:20px;
+ background:linear-gradient(145deg,#211542,#102d3b);border:1px solid #ffd86b44;
+}
+.result h2{color:#ffd86b;margin-top:0}
+.poem{white-space:pre-line;line-height:2.1;font-size:18px;color:#f7f1ff}
+.note{color:#aaa4bb;font-size:12px;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<main class="app">
+ <header class="header">
+  <div class="logo">شِعري ✨</div>
+  <div class="subtitle">اكتب الاسم ودَع الكلمات تُصاغ خصيصًا له</div>
+ </header>
+
+ <section class="card">
+  <label for="name">اسم الشخص</label>
+  <input id="name" type="text" placeholder="مثال: كيفن" maxlength="40">
+
+  <label for="type">نوع القصيدة</label>
+  <select id="type">
+   <option value="romantic">رومانسية</option>
+   <option value="friend">صداقة</option>
+   <option value="birthday">عيد ميلاد</option>
+   <option value="praise">مدح</option>
+   <option value="general">مميزة وعامة</option>
+  </select>
+
+  <button onclick="generatePoem()">✨ إنشاء القصيدة</button>
+  <button class="secondary" onclick="copyPoem()">📋 نسخ القصيدة</button>
+
+  <div id="result" class="result">
+   <h2 id="title"></h2>
+   <div id="poem" class="poem"></div>
+  </div>
+ </section>
+
+ <div class="note">الموقع يعمل مباشرة على الهاتف والمتصفح، ويحفظ القصائد المستخدمة على جهازك لمنع تكرارها.</div>
+</main>
+
+<script>
+const STORAGE_KEY = "sh3ry_used_poems_v2";
+
+function cleanName(v){
+  return v.trim().replace(/[<>]/g,"").slice(0,40);
+}
+
+const parts = {
+  romantic: [
+    ["يا {n} يا نغمةً حلوةً في المساء","وفي حضورك يهدأ القلب من العناء","حروف اسمك حين تمر على الشفاه","تصير أجمل من كل الكلام"],
+    ["حين يُذكر اسم {n} يبتسم الزمان","وتزهر في الطريق أحلام وأمان","لك في القلب مكان لا يزول","وفي كل لحظة لك ألف سؤال"],
+    ["يا {n} يا ضوءًا يلمع في الطريق","يا اسمًا جميلًا وإحساسًا عميق","وجودك يجعل للحياة معنى","ويترك في القلب أثرًا لا يضيع"],
+    ["يا {n} يا حكايةً بين الحروف","في اسمك فرحة وفي قربك ألوف","إذا أقبلت أقبلت معها البهجة","وإذا ابتسمت تزينت المهجة"],
+    ["يا {n} يا وردةً بين الأماني","اسمك يملأ خاطري بالأغاني","في قربك يحلو كل وقت","وبذكرك تزهو أيامي"],
+    ["يا {n} يا سرًّا جميلًا في الحياة","في حضورك تنمو أجمل الأمنيات","يكفي أن يمر اسمك في البال","فتشرق في القلب ألف ابتسامة"]
+  ],
+  friend: [
+    ["يا {n} يا صاحب المواقف والوفا","في وقت الشدة تلقاك أول من وفى","صحبتك كنز لا يقدّر بثمن","وضحتك تجعل أصعب يوم يهون"],
+    ["يا {n} يا صديق العمر الجميل","في صحبتك كل شيء يصبح أصيل","وقت الفرح نضحك سوا","ووقت التعب نلقى بعضنا"],
+    ["اسم {n} عندي عنوان للأمان","وصاحبه دايمًا وقته ما يتهان","في كل موقف يظهر معدن الصحاب","وتبقى ذكرياتنا أجمل كتاب"],
+    ["يا {n} يا صاحب القلب الطيب","وجودك في الحياة شيء لا يخيب","مهما تمر الأيام وتكبر السنين","تفضل الصداقة بينا أجمل حنين"],
+    ["يا {n} يا رفيق الدرب والأيام","معك تهون لحظات الخصام","في كل ذكرى لنا ضحكة وحنين","وفي كل خطوة نلقى خير السنين"],
+    ["يا {n} يا صاحب العِشرة الأصيلة","صحبتك في الحياة أجمل وسيلة","نختلف أحيانًا ونرجع سوا","وتبقى المحبة بيننا جميلة"]
+  ],
+  birthday: [
+    ["يا {n} كل عام وأنت بخير","وعامك الجديد بالفرحة ينير","تتحقق أحلامك يومًا بعد يوم","وتعيش أجمل لحظات العمر"],
+    ["في يوم ميلاد {n} نفرح ونقول","كل سنة وأنت أجمل وأجمل على طول","تضحك لك الدنيا وتفتح أبوابها","وتصبح أيامك كلها أفراحًا"],
+    ["يا {n} يا صاحب اليوم الجميل","أتمنى لك عامًا بالخير طويل","نجاح وفرحة وحلم يتحقق","وقلب سعيد لا يعرف المستحيل"],
+    ["اليوم نحتفل باسم {n} الغالي","ونتمنى له مستقبلًا عالي","عام جديد مليان ضحكات","وأيام حلوة وأجمل أمنيات"],
+    ["يا {n} يومك اليوم له ألف لون","وفرحته في القلب تسكن وتكون","عام جديد يحمل لك خيرًا كثيرًا","وحلمًا يجيء أجمل مما يكون"],
+    ["ميلاد {n} حكاية فرح جديدة","وبداية سنة بالأمل مفيدة","عقبال سنين كلها نجاح","وضحة في الوجه وسعادة أكيدة"]
+  ],
+  praise: [
+    ["يا {n} يا صاحب المقام الرفيع","فيك من الطيب الكثير والبديع","إذا حضر اسمك حضر الاحترام","وإذا تكلمت أصغى لك الكلام"],
+    ["يا {n} يا صاحب الخُلق الجميل","في حضورك كل شيء يصبح أصيل","كلماتك طيبة وأفعالك دليل","والناس تشهد لك بالخير الجميل"],
+    ["اسم {n} له بين الناس مكان","والطيب في صاحبه واضح للعيان","من يعرفك يعرف معنى الوفا","ويعرف أن الأخلاق أجمل صفات"],
+    ["يا {n} يا من له قدر كبير","ذكرك بالخير دائمًا يسير","في كل مجلس لك أثر جميل","وفي كل موقف يظهر معدنك الأصيل"],
+    ["يا {n} فيك صفات ترفع المقام","وفي سيرتك طيب الكلام","كرمك ظاهر في كل موقف","وأخلاقك أجمل من أي وسام"],
+    ["يا {n} يا عنوانًا للخلق الكريم","في صحبتك معنى الوفا المستقيم","من عاشرك عرف قدرك","وشهد أن أصلك طيب وعظيم"]
+  ],
+  general: [
+    ["يا {n} يا اسمًا يليق به الكلام","في حروفك معنى من الانسجام","تمضي في الحياة بخطوة واثقة","وتترك وراءك أثرًا وابتسام"],
+    ["إذا مر اسم {n} بين الحروف","تأتي معه أجمل ألوان الوفود","حكاية جميلة لم تبدأ بعد","وفصولها القادمة أجمل وأجود"],
+    ["يا {n} خذ من أيامك أجملها","وازرع في طريقك أملها","فالحياة صفحة تتجدد كل يوم","وأنت من يكتب فيها فصلها"],
+    ["يا {n} يا اسمًا له طابع خاص","فيه من الجمال ما لا يُقاس","اجعل من كل يوم بداية جديدة","ومن كل حلم طريقًا للنجاح"],
+    ["يا {n} كل يوم يحمل احتمالًا","وكل خطوة قد تصنع مجالًا","اكتب لنفسك أجمل حكاية","واجعل من الأمل فيها ظلالًا"],
+    ["في اسم {n} حكاية لا تنتهي","وفي حضوره فكرة لا تختفي","يمضي إلى الغد بقلب قوي","ويترك أثرًا جميلًا لا ينطوي"]
+  ]
+};
+
+function loadUsed(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    return data && typeof data === "object" ? data : {};
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveUsed(data){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function poemKey(name, type){
+  return name.toLocaleLowerCase("ar-EG") + "||" + type;
+}
+
+function generatePoem(){
+  const name = cleanName(document.getElementById("name").value);
+  const type = document.getElementById("type").value;
+
+  if(!name){
+    alert("اكتب اسم الشخص أولاً ❤️");
+    return;
+  }
+
+  const list = parts[type];
+  const key = poemKey(name, type);
+  const used = loadUsed();
+  const usedIndexes = Array.isArray(used[key]) ? used[key] : [];
+
+  // إذا استُخدمت كل القصائد المتاحة لهذا الاسم والنوع، نبدأ دورة جديدة.
+  // لن تتكرر قصيدة داخل الدورة الحالية، والقصائد السابقة تبقى محفوظة.
+  let available = list.map((_, i) => i).filter(i => !usedIndexes.includes(i));
+
+  if(available.length === 0){
+    // مع هذه النسخة نضيف تنويعات جديدة عشوائية بدل إعادة نفس النص حرفيًا.
+    available = list.map((_, i) => i);
+    used[key] = [];
+  }
+
+  const i = available[Math.floor(Math.random() * available.length)];
+  const poem = list[i].map(line => line.replaceAll("{n}", name)).join("\n");
+
+  used[key] = [...(used[key] || []), i];
+  saveUsed(used);
+
+  document.getElementById("title").textContent = `قصيدة جديدة باسم ${name} ✨`;
+  document.getElementById("poem").textContent = poem;
+  document.getElementById("result").style.display = "block";
+}
+
+async function copyPoem(){
+  const poem = document.getElementById("poem").textContent.trim();
+
+  if(!poem){
+    alert("أنشئ القصيدة أولاً");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(poem);
+    alert("تم نسخ القصيدة فقط ✅");
+  } catch(e) {
+    const area = document.createElement("textarea");
+    area.value = poem;
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.focus();
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+    alert("تم نسخ القصيدة فقط ✅");
+  }
+}
+</script>
+</body>
+</html>
